@@ -1,24 +1,40 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar as CalendarIcon, ListTodo, Settings, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, ListTodo, Settings, Plus, Clock } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
 
 interface Event {
   id: string;
   title: string;
   date: Date;
+  time: string;
 }
 
 const Index = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [events, setEvents] = useState<Event[]>([]);
   const [newEventTitle, setNewEventTitle] = useState("");
+  const [selectedTime, setSelectedTime] = useState("09:00");
   const { toast } = useToast();
+
+  const generateTimeOptions = () => {
+    const times = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const formattedHour = hour.toString().padStart(2, '0');
+        const formattedMinute = minute.toString().padStart(2, '0');
+        times.push(`${formattedHour}:${formattedMinute}`);
+      }
+    }
+    return times;
+  };
 
   const handleAddEvent = () => {
     if (!date || !newEventTitle.trim()) {
@@ -34,6 +50,7 @@ const Index = () => {
       id: Math.random().toString(36).substr(2, 9),
       title: newEventTitle,
       date: date,
+      time: selectedTime,
     };
 
     setEvents([...events, newEvent]);
@@ -96,6 +113,26 @@ const Index = () => {
                         placeholder="Enter event title"
                       />
                     </div>
+                    <div className="grid gap-2">
+                      <Label>Time</Label>
+                      <Select value={selectedTime} onValueChange={setSelectedTime}>
+                        <SelectTrigger>
+                          <SelectValue>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              {selectedTime}
+                            </div>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {generateTimeOptions().map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {time}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Calendar
                       mode="single"
                       selected={date}
@@ -127,7 +164,9 @@ const Index = () => {
                     key={event.id}
                     className="p-2 bg-secondary rounded-md mb-2 flex justify-between items-center"
                   >
-                    <span>{event.title}</span>
+                    <span>
+                      {event.title} - {event.time}
+                    </span>
                     <Button
                       variant="destructive"
                       size="sm"
